@@ -5,7 +5,7 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Activity Hub Root node"}
 
 
 @app.get("/hello/{name}")
