@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: activityhub-db
+    restart: always
+    environment:
+      POSTGRES_USER: activityhub
+      POSTGRES_PASSWORD: activityhub123
+      POSTGRES_DB: activityhub_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: activityhub-backend
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://activityhub:activityhub123@postgres:5432/activityhub_db
+      JWT_SECRET: change-this-secret
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
