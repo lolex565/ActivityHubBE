@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.database import create_db_and_tables, engine
@@ -18,6 +19,14 @@ def health():
         connection.execute(text("SELECT 1"))
     return {"status": "ok"}
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # zmienic na frontend url na prodzie
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth.router)
 app.include_router(users.router)
