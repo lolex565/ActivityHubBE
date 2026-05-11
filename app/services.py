@@ -12,6 +12,21 @@ def count_event_participants(session: Session, event_id: int) -> int:
 
 
 def event_to_read_dict(session: Session, event: Event) -> dict:
-    data = event.model_dump()
-    data["participants_count"] = count_event_participants(session, event.id)
-    return data
+    session.refresh(event)
+
+    return {
+        "id": event.id,
+        "organizer_id": event.organizer_id,
+        "name": event.name,
+        "description": event.description,
+        "type": event.type,
+        "location_name": event.location_name,
+        "latitude": event.latitude,
+        "longitude": event.longitude,
+        "event_date": event.event_date,
+        "event_time": event.event_time,
+        "max_participants": event.max_participants,
+        "status": event.status,
+        "created_at": event.created_at,
+        "participants_count": count_event_participants(session, event.id),
+    }

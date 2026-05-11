@@ -120,7 +120,37 @@ def test_full_backend_flow():
 
     assert event["name"] == "Flanki na Wyspie"
     assert event["participants_count"] == 0
+    # 6.1 Update event
+    update_event_payload = {
+        "name": "Flanki na Wyspie Updated",
+        "description": "Zmieniony opis wydarzenia",
+        "type": "social",
+        "location_name": "Wyspa Słodowa",
+        "latitude": 51.115,
+        "longitude": 17.038,
+        "event_date": "2026-06-01",
+        "event_time": "19:00:00",
+        "max_participants": 12,
+        "status": "ACTIVE"
+    }
 
+    update_event_response = requests.patch(
+        f"{BASE_URL}/events/{event_id}",
+        json=update_event_payload,
+        headers=organizer_headers
+    )
+
+    assert update_event_response.status_code == 200, update_event_response.text
+
+    updated_event = update_event_response.json()
+
+    assert updated_event["id"] == event_id
+    assert updated_event["name"] == "Flanki na Wyspie Updated"
+    assert updated_event["description"] == "Zmieniony opis wydarzenia"
+    assert updated_event["event_time"] == "19:00:00"
+    assert updated_event["max_participants"] == 12
+    assert "participants_count" in updated_event
+    
     # 7. Get events list
     events_response = requests.get(f"{BASE_URL}/events")
 

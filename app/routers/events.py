@@ -1,6 +1,8 @@
 from datetime import date
 from typing import Optional
 
+from requests import session
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session, col, or_, select
 
@@ -166,6 +168,7 @@ def update_event(
             )
 
     session.commit()
+    session.refresh(event)
 
     return event_to_read_dict(session, event)
 
