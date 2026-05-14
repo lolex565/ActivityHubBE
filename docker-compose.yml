@@ -12,6 +12,19 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  pgweb_activityhub:
+    container_name: pgweb_activityhub
+    restart: always
+    image: sosedoff/pgweb
+    ports:
+      - 8081:8081
+    links:
+      - postgres:postgres
+    environment:
+      - PGWEB_DATABASE_URL=postgres://activityhub:activityhub123@postgres:5432/activityhub_db?sslmode=disable
+    depends_on:
+      - postgres
+
   backend:
     build: .
     container_name: activityhub-backend
