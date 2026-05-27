@@ -97,6 +97,7 @@ class EventRead(BaseModel):
     status: EventStatus
     created_at: datetime
     participants_count: int = 0
+    joined: bool
 
 
 class EventDetails(EventRead):
