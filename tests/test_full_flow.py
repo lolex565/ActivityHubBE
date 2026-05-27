@@ -19,7 +19,7 @@ def register_user(email: str):
     response = requests.post(f"{BASE_URL}/auth/register", json=payload)
 
     assert response.status_code == 201
-    assert response.json()["email"] == email
+    :q
     assert "password_hash" not in response.json()
 
     return response.json()
@@ -152,14 +152,18 @@ def test_full_backend_flow():
     assert "participants_count" in updated_event
     
     # 7. Get events list
-    events_response = requests.get(f"{BASE_URL}/events")
-
+    events_response = requests.get(
+        f"{BASE_URL}/events",
+        headers=organizer_headers
+    )
+    print(organizer_headers)
     assert events_response.status_code == 200
     assert any(item["id"] == event_id for item in events_response.json())
 
     # 8. Search events
     search_response = requests.get(
-        f"{BASE_URL}/events?search=Flanki&type=social&location=Wyspa"
+        f"{BASE_URL}/events?search=Flanki&type=social&location=Wyspa",
+        headers=organizer_headers
     )
 
     assert search_response.status_code == 200

@@ -1,6 +1,7 @@
 from sqlmodel import Session, select
+from typing import Optional
 
-from app.models import Event, EventUserStatus, UserEvent
+from app.models import Event, EventUserStatus, UserEvent, User
 
 
 def count_event_participants(session: Session, event_id: int) -> int:
@@ -10,8 +11,17 @@ def count_event_participants(session: Session, event_id: int) -> int:
     )
     return len(session.exec(statement).all())
 
+def check_event_participation(session: Session, event_id: int, curr_user: Optional[User]) -> bool:
+    if curr_user:
+        statement = select(UserEvent).where(
+            UserEvent.event_id == event_id,
+            UserEvent.user_id == curr_user.id
+        )
+        return bool(len(session.exec(statement).all()))
+    return False
 
-def event_to_read_dict(session: Session, event: Event) -> dict:
+
+def event_to_read_dict(session: Session, event: Event, curr_user: Optional[User] = None) -> dict:
     session.refresh(event)
 
     return {
@@ -29,4 +39,5 @@ def event_to_read_dict(session: Session, event: Event) -> dict:
         "status": event.status,
         "created_at": event.created_at,
         "participants_count": count_event_participants(session, event.id),
+        "joined": check_event_participation(session, event.id, curr_user),
     }

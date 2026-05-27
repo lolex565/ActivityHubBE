@@ -64,6 +64,7 @@ def get_events(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     statement = select(Event)
 
@@ -94,7 +95,8 @@ def get_events(
     statement = statement.order_by(Event.event_date, Event.event_time)
 
     events = session.exec(statement).all()
-    return [event_to_read_dict(session, event) for event in events]
+
+    return [event_to_read_dict(session, event, current_user) for event in events]
 
 
 @router.get("/map", response_model=list[MapEventRead])
