@@ -5,7 +5,7 @@ from typing import ClassVar
 from sqlalchemy import Column
 from sqlalchemy import Enum as SAEnum
 from sqlmodel import Field, SQLModel
-
+from sqlalchemy import CheckConstraint, Column, Text, UniqueConstraint, ForeignKey
 
 class UserRole(str, Enum):
     USER = "USER"
@@ -93,18 +93,36 @@ class UserEvent(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utc_now)
 
 
-class Rating(SQLModel, table=True):
-    __tablename__: ClassVar[str] = "ratings"
+class EventReview(SQLModel, table=True):
+    __tablename__: ClassVar[str] = "event_reviews"
+    __table_args__ = (
+        UniqueConstraint("event_id", "author_id", name="uq_event_reviews_event_author"),
+        CheckConstraint("rating >= 1 AND rating <= 5", name="ck_event_reviews_rating_range"),
+        CheckConstraint("char_length(comment) <= 1000", name="ck_event_reviews_comment_length"),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
-    author_id: int = Field(foreign_key="users.id")
-    event_id: int | None = Field(default=None, foreign_key="events.id")
-    rated_user_id: int | None = Field(default=None, foreign_key="users.id")
-    score: int
-    description: str | None = None
+
+    event_id: int = Field(
+        sa_column=Column(
+            ForeignKey("events.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        )
+    )
+
+    author_id: int = Field(
+        sa_column=Column(
+            ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        )
+    )
+
+    rating: int
+    comment: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
     created_at: datetime = Field(default_factory=utc_now)
-
-
+    
 class Announcement(SQLModel, table=True):
     __tablename__: ClassVar[str] = "announcements"
 

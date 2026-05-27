@@ -6,6 +6,8 @@ from app.models import User, UserSettings
 from app.schemas import TokenResponse, UserCreate, UserLogin, UserRead
 from app.security import create_access_token, hash_password, verify_password
 
+
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -41,6 +43,22 @@ def login(payload: UserLogin, session: Session = Depends(get_session)):
     user = session.exec(select(User).where(User.email == payload.email)).first()
 
     if not user or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Niepoprawny email lub hasło")
+
+    token = create_access_token(subject=str(user.id))
+    return TokenResponse(access_token=token)
+
+# Auth for swagger use only, not for production
+from fastapi.security import OAuth2PasswordRequestForm
+
+@router.post("/token", response_model=TokenResponse)
+def token_login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: Session = Depends(get_session),
+):
+    user = session.exec(select(User).where(User.email == form_data.username)).first()
+
+    if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Niepoprawny email lub hasło")
 
     token = create_access_token(subject=str(user.id))

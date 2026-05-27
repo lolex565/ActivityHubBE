@@ -47,18 +47,17 @@ CREATE TABLE user_events (
     PRIMARY KEY (user_id, event_id)
 );
 
-CREATE TABLE ratings (
+CREATE TABLE event_reviews (
     id SERIAL PRIMARY KEY,
+    event_id INT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     author_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    event_id INT REFERENCES events(id) ON DELETE CASCADE,
-    rated_user_id INT REFERENCES users(id) ON DELETE CASCADE,
-    score INT NOT NULL CHECK (score BETWEEN 1 AND 5),
-    description TEXT,
+    rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CHECK (
-        (event_id IS NOT NULL AND rated_user_id IS NULL)
-        OR
-        (event_id IS NULL AND rated_user_id IS NOT NULL)
+
+    CONSTRAINT uq_event_reviews_event_author UNIQUE (event_id, author_id),
+    CONSTRAINT ck_event_reviews_comment_length CHECK (
+        comment IS NULL OR char_length(comment) <= 1000
     )
 );
 
@@ -98,3 +97,5 @@ CREATE INDEX idx_events_name ON events(name);
 CREATE INDEX idx_messages_event_id ON messages(event_id);
 CREATE INDEX idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX idx_announcements_event_id ON announcements(event_id);
+CREATE INDEX idx_event_reviews_event_id ON event_reviews(event_id);
+CREATE INDEX idx_event_reviews_author_id ON event_reviews(author_id);

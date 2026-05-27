@@ -1,0 +1,1 @@
+ALTER TABLE IF EXISTS ratings RENAME TO ratings_archived;
