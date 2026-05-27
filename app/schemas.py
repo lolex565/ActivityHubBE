@@ -173,3 +173,16 @@ class MapEventRead(BaseModel):
     location_name: Optional[str] = None
     participants_count: int = 0
     max_participants: Optional[int] = None
+
+class EventReviewCreate(BaseModel):
+    rating: int = Field(ge=1, le=5)
+    comment: Optional[str] = Field(default=None, max_length=1000)
+
+
+class EventReviewRead(BaseModel):
+    id: int
+    event_id: int
+    author_id: int
+    rating: int
+    comment: Optional[str] = None
+    created_at: datetime

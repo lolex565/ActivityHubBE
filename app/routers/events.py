@@ -7,10 +7,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session, col, or_, select
 
 from app.database import get_session
-from app.models import Event, EventStatus, EventUserStatus, Notification, User, UserEvent
-from app.schemas import EventCreate, EventDetails, EventRead, EventUpdate, MapEventRead, ParticipantRead
+from app.models import EventReview, Event, EventStatus, EventUserStatus, Notification, User, UserEvent
+from app.schemas import  EventReviewCreate, EventReviewRead, EventCreate, EventDetails, EventRead, EventUpdate, MapEventRead, ParticipantRead
 from app.security import get_current_user
 from app.services import count_event_participants, event_to_read_dict
+from datetime import date
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -324,3 +325,44 @@ def get_participants(event_id: int, session: Session = Depends(get_session)):
             )
 
     return result
+
+@router.post("/{event_id}/reviews", response_model=EventReviewRead, status_code=status.HTTP_201_CREATED)
+def create_event_review(
+    event_id: int,
+    payload: EventReviewCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    event = require_event(session, event_id)
+
+    if event.event_date >= date.today():
+        raise HTTPException(
+            status_code=400,
+            detail="Nie można ocenić wydarzenia, które jeszcze się nie odbyło"
+        )
+    link = session.get(UserEvent, (current_user.id, event_id))
+    if not link or link.status != EventUserStatus.PARTICIPANT:
+        raise HTTPException(status_code=403, detail="Tylko uczestnik może ocenić wydarzenie")
+
+    existing_review = session.exec(
+        select(EventReview).where(
+            EventReview.event_id == event_id,
+            EventReview.author_id == current_user.id,
+        )
+    ).first()
+
+    if existing_review:
+        raise HTTPException(status_code=409, detail="Już wystawiłeś recenzję dla tego wydarzenia")
+
+    review = EventReview(
+        event_id=event_id,
+        author_id=current_user.id,
+        rating=payload.rating,
+        comment=payload.comment,
+    )
+
+    session.add(review)
+    session.commit()
+    session.refresh(review)
+
+    return review
