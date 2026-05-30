@@ -6,6 +6,10 @@ from app.models import Event, EventUserStatus, User, UserEvent
 from app.schemas import MyEventsResponse, UserRead, UserUpdate
 from app.security import get_current_user
 from app.services import event_to_read_dict
+from sqlalchemy import func
+from app.models import Event, EventReview, User
+from app.schemas import UserAverageReviewRead
+from app.security import get_current_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -74,3 +78,32 @@ def get_user(user_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Użytkownik nie istnieje")
 
     return user
+
+@router.get("/{user_id}/reviews/average", response_model=UserAverageReviewRead)
+def get_user_reviews_average(
+    user_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    user = session.get(User, user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Użytkownik nie istnieje")
+
+    statement = (
+        select(
+            func.avg(EventReview.rating),
+            func.count(EventReview.id),
+        )
+        .select_from(Event)
+        .join(EventReview, EventReview.event_id == Event.id)
+        .where(Event.organizer_id == user_id)
+    )
+
+    average_rating, total_reviews_count = session.exec(statement).one()
+
+    return UserAverageReviewRead(
+        user_id=user_id,
+        average_rating=round(float(average_rating), 2) if average_rating is not None else 0.0,
+        total_reviews_count=total_reviews_count,
+    )
