@@ -47,6 +47,7 @@ class User(SQLModel, table=True):
     )
     university: str | None = Field(default=None, max_length=255)
     faculty: str | None = Field(default=None, max_length=255)
+    avatar_url: str | None = Field(default=None, max_length=500)
     created_at: datetime = Field(default_factory=utc_now)
 
 

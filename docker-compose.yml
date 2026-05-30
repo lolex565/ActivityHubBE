@@ -38,6 +38,9 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: 60
     ports:
       - "8000:8000"
+    volumes:
+      - avatar_storage:/app/storage
 
 volumes:
   postgres_data:
+  avatar_storage:

@@ -10,8 +10,21 @@ from sqlalchemy import func
 from app.models import Event, EventReview, User
 from app.schemas import UserAverageReviewRead
 from app.security import get_current_user
+import shutil
+from pathlib import Path
+
+from fastapi import File, UploadFile
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+AVATARS_DIR = Path("storage/avatars")
+MAX_AVATAR_SIZE = 5 * 1024 * 1024
+
+ALLOWED_AVATAR_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
 
 
 @router.get("/me", response_model=UserRead)
@@ -107,3 +120,36 @@ def get_user_reviews_average(
         average_rating=round(float(average_rating), 2) if average_rating is not None else 0.0,
         total_reviews_count=total_reviews_count,
     )
+
+@router.post("/me/avatar", response_model=UserRead)
+def upload_my_avatar(
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    if file.content_type not in ALLOWED_AVATAR_TYPES:
+        raise HTTPException(status_code=400, detail="Dozwolone są tylko pliki JPG, PNG lub WEBP")
+
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+
+    if file_size > MAX_AVATAR_SIZE:
+        raise HTTPException(status_code=400, detail="Maksymalny rozmiar pliku to 5 MB")
+
+    AVATARS_DIR.mkdir(parents=True, exist_ok=True)
+
+    extension = ALLOWED_AVATAR_TYPES[file.content_type]
+    filename = f"user_{current_user.id}{extension}"
+    file_path = AVATARS_DIR / filename
+
+    with file_path.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    current_user.avatar_url = f"/static/avatars/{filename}"
+
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+
+    return current_user
