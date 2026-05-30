@@ -157,3 +157,13 @@ class Notification(SQLModel, table=True):
     content: str | None = None
     is_read: bool = False
     created_at: datetime = Field(default_factory=utc_now)
+    
+class Follow(SQLModel, table=True):
+    __tablename__: ClassVar[str] = "follows"
+    __table_args__ = (
+        CheckConstraint("follower_id <> followed_id", name="ck_follows_no_self_follow"),
+    )
+
+    follower_id: int = Field(foreign_key="users.id", primary_key=True)
+    followed_id: int = Field(foreign_key="users.id", primary_key=True)
+    created_at: datetime = Field(default_factory=utc_now)
