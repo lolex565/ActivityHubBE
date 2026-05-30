@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-DB_CONTAINER="activityhub-db"
-DB_USER="postgres"
-DB_NAME="activityhub"
+DB_CONTAINER="postgres"
+DB_USER="activityhub"
+DB_NAME="activityhub_db"
 
 echo "Running migrations..."
 
