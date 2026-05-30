@@ -187,3 +187,8 @@ class EventReviewRead(BaseModel):
     rating: int
     comment: Optional[str] = None
     created_at: datetime
+
+class UserAverageReviewRead(BaseModel):
+    user_id: int
+    average_rating: float
+    total_reviews_count: int
