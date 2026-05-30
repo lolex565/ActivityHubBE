@@ -168,6 +168,11 @@ def update_event(
     longitude = update_data.get("longitude", event.longitude)
     validate_coordinates(latitude, longitude)
 
+    status_changed_to_started = (
+        update_data.get("status") == EventStatus.STARTED
+        and event.status != EventStatus.STARTED
+    )
+
     status_changed_to_finished = (
         update_data.get("status") == EventStatus.FINISHED
         and event.status != EventStatus.FINISHED
@@ -187,7 +192,22 @@ def update_event(
         )
     ).all()
 
-    if status_changed_to_finished:
+    if status_changed_to_started:
+        for link in notification_links:
+            if link.user_id != current_user.id:
+                session.add(
+                    Notification(
+                        user_id=link.user_id,
+                        event_id=event.id,
+                        title="Wydarzenie rozpoczęte",
+                        content=(
+                            f"Wydarzenie {event.name} właśnie się rozpoczęło! "
+                            "Dołącz do uczestników."
+                        ),
+                    )
+                )
+
+    elif status_changed_to_finished:
         for link in notification_links:
             if link.user_id != current_user.id:
                 session.add(
@@ -201,6 +221,7 @@ def update_event(
                         ),
                     )
                 )
+
     else:
         for link in notification_links:
             if link.user_id != current_user.id:
@@ -217,7 +238,6 @@ def update_event(
     session.refresh(event)
 
     return event_to_read_dict(session, event)
-
 
 @router.delete("/{event_id}")
 def cancel_event(
