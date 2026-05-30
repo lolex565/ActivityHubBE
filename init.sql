@@ -14,6 +14,7 @@ CREATE TABLE users (
     role user_role NOT NULL DEFAULT 'USER',
     university VARCHAR(255),
     faculty VARCHAR(255),
+    avatar_url VARCHAR(500),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

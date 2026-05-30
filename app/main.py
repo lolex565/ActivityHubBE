@@ -5,8 +5,16 @@ from sqlalchemy import text
 from app.database import create_db_and_tables, engine
 from app.routers import announcements, auth, events, messages, notifications, users
 
+from pathlib import Path
+
+from fastapi.staticfiles import StaticFiles
+
 app = FastAPI(title="ActivityHub API")
 
+AVATARS_DIR = Path("storage/avatars")
+AVATARS_DIR.mkdir(parents=True, exist_ok=True)
+
+app.mount("/static/avatars", StaticFiles(directory=AVATARS_DIR), name="avatars")
 
 @app.on_event("startup")
 def on_startup():
