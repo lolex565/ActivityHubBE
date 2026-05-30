@@ -134,6 +134,8 @@ class MessageRead(BaseModel):
 
 class NotificationRead(BaseModel):
     id: int
+    user_id: int
+    event_id: Optional[int] = None
     title: str
     content: Optional[str] = None
     is_read: bool

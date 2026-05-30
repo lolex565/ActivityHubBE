@@ -82,6 +82,7 @@ CREATE TABLE messages (
 CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    event_id INT REFERENCES events(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     content TEXT,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,

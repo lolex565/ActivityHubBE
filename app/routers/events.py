@@ -168,6 +168,11 @@ def update_event(
     longitude = update_data.get("longitude", event.longitude)
     validate_coordinates(latitude, longitude)
 
+    status_changed_to_finished = (
+        update_data.get("status") == EventStatus.FINISHED
+        and event.status != EventStatus.FINISHED
+    )
+
     for key, value in update_data.items():
         setattr(event, key, value)
 
@@ -182,15 +187,31 @@ def update_event(
         )
     ).all()
 
-    for link in notification_links:
-        if link.user_id != current_user.id:
-            session.add(
-                Notification(
-                    user_id=link.user_id,
-                    title="Wydarzenie zostało zmienione",
-                    content=f"Organizator zmienił wydarzenie: {event.name}",
+    if status_changed_to_finished:
+        for link in notification_links:
+            if link.user_id != current_user.id:
+                session.add(
+                    Notification(
+                        user_id=link.user_id,
+                        event_id=event.id,
+                        title="Wydarzenie zakończone",
+                        content=(
+                            f"Wydarzenie {event.name} zostało zakończone przez organizatora! "
+                            "Podziel się swoją opinią i wystaw recenzję."
+                        ),
+                    )
                 )
-            )
+    else:
+        for link in notification_links:
+            if link.user_id != current_user.id:
+                session.add(
+                    Notification(
+                        user_id=link.user_id,
+                        event_id=event.id,
+                        title="Wydarzenie zostało zmienione",
+                        content=f"Organizator zmienił wydarzenie: {event.name}",
+                    )
+                )
 
     session.commit()
     session.refresh(event)
