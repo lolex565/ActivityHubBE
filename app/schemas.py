@@ -46,7 +46,8 @@ class UserPublic(BaseModel):
     last_name: str
     university: Optional[str] = None
     faculty: Optional[str] = None
-
+    organizer_average_rating: float = 0.0
+    organizer_total_reviews: int = 0
 
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None

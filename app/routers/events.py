@@ -5,7 +5,7 @@ from requests import session
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session, col, or_, select
-
+from sqlalchemy import func
 from app.database import get_session
 from app.models import EventReview, Event, EventStatus, EventUserStatus, Notification, User, UserEvent
 from app.schemas import  EventReviewCreate, EventReviewRead, EventCreate, EventDetails, EventRead, EventUpdate, MapEventRead, ParticipantRead
@@ -33,6 +33,24 @@ def require_event(session: Session, event_id: int) -> Event:
 def require_organizer(event: Event, user: User) -> None:
     if event.organizer_id != user.id:
         raise HTTPException(status_code=403, detail="Tylko organizator może wykonać tę akcję")
+
+def get_organizer_rating_stats(session: Session, organizer_id: int) -> dict:
+    statement = (
+        select(
+            func.avg(EventReview.rating),
+            func.count(EventReview.id),
+        )
+        .select_from(Event)
+        .join(EventReview, EventReview.event_id == Event.id)
+        .where(Event.organizer_id == organizer_id)
+    )
+
+    average_rating, total_reviews = session.exec(statement).one()
+
+    return {
+        "organizer_average_rating": round(float(average_rating), 2) if average_rating is not None else 0.0,
+        "organizer_total_reviews": total_reviews,
+    }
 
 
 @router.post("", response_model=EventRead, status_code=status.HTTP_201_CREATED)
@@ -118,13 +136,17 @@ def get_event(event_id: int, session: Session = Depends(get_session)):
     organizer = session.get(User, event.organizer_id)
 
     data = event_to_read_dict(session, event)
+
     if organizer:
+        rating_stats = get_organizer_rating_stats(session, organizer.id)
+
         data["organizer"] = {
             "id": organizer.id,
             "first_name": organizer.first_name,
             "last_name": organizer.last_name,
             "university": organizer.university,
             "faculty": organizer.faculty,
+            **rating_stats,
         }
 
     return data
