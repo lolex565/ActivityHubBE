@@ -16,6 +16,7 @@ class UserRole(str, Enum):
 class EventStatus(str, Enum):
     DRAFT = "DRAFT"
     ACTIVE = "ACTIVE"
+    STARTED = "STARTED"
     CANCELLED = "CANCELLED"
     FINISHED = "FINISHED"
 
