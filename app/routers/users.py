@@ -7,7 +7,7 @@ from sqlalchemy import func
 from sqlmodel import Session, col, or_, select
 
 from app.database import get_session
-from app.models import Event, EventReview, EventUserStatus, User, UserEvent
+from app.models import Event, EventReview, EventUserStatus, Follow, User, UserEvent
 from app.schemas import (
     MyEventsResponse,
     UserAverageReviewRead,
@@ -82,7 +82,33 @@ def search_users(
 
     statement = statement.offset((page - 1) * size).limit(size)
 
-    return session.exec(statement).all()
+    users = session.exec(statement).all()
+    user_ids = [user.id for user in users if user.id is not None]
+
+    followed_ids = set()
+
+    if user_ids:
+        followed_links = session.exec(
+            select(Follow.followed_id).where(
+                col(Follow.follower_id) == current_user.id,
+                col(Follow.followed_id).in_(user_ids),
+            )
+        ).all()
+
+        followed_ids = set(followed_links)
+
+    return [
+        {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "university": user.university,
+            "faculty": user.faculty,
+            "avatar_url": user.avatar_url,
+            "is_followed": user.id in followed_ids,
+        }
+        for user in users
+    ]
 
 
 @router.get("", response_model=list[UserRead])
