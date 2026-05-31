@@ -1,19 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
-
-from app.database import get_session
-from app.models import Event, EventUserStatus, User, UserEvent
-from app.schemas import MyEventsResponse, UserRead, UserUpdate
-from app.security import get_current_user
-from app.services import event_to_read_dict
-from sqlalchemy import func
-from app.models import Event, EventReview, User
-from app.schemas import UserAverageReviewRead
-from app.security import get_current_user
 import shutil
 from pathlib import Path
+from typing import Optional
 
-from fastapi import File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from sqlalchemy import func
+from sqlmodel import Session, col, or_, select
+
+from app.database import get_session
+from app.models import Event, EventReview, EventUserStatus, User, UserEvent
+from app.schemas import (
+    MyEventsResponse,
+    UserAverageReviewRead,
+    UserPublic,
+    UserRead,
+    UserUpdate,
+)
+from app.security import get_current_user
+from app.services import event_to_read_dict
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -48,6 +51,38 @@ def update_me(
     session.refresh(current_user)
 
     return current_user
+
+
+@router.get("/search", response_model=list[UserPublic])
+def search_users(
+    search_query: Optional[str] = None,
+    university: Optional[str] = None,
+    faculty: Optional[str] = None,
+    page: int = Query(default=1, ge=1),
+    size: int = Query(default=20, ge=1, le=100),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    statement = select(User)
+
+    if search_query:
+        pattern = f"%{search_query}%"
+        statement = statement.where(
+            or_(
+                col(User.first_name).ilike(pattern),
+                col(User.last_name).ilike(pattern),
+            )
+        )
+
+    if university:
+        statement = statement.where(User.university == university)
+
+    if faculty:
+        statement = statement.where(User.faculty == faculty)
+
+    statement = statement.offset((page - 1) * size).limit(size)
+
+    return session.exec(statement).all()
 
 
 @router.get("", response_model=list[UserRead])
@@ -92,6 +127,7 @@ def get_user(user_id: int, session: Session = Depends(get_session)):
 
     return user
 
+
 @router.get("/{user_id}/reviews/average", response_model=UserAverageReviewRead)
 def get_user_reviews_average(
     user_id: int,
@@ -106,10 +142,10 @@ def get_user_reviews_average(
     statement = (
         select(
             func.avg(EventReview.rating),
-            func.count(EventReview.id),
+            func.count(col(EventReview.id)),
         )
         .select_from(Event)
-        .join(EventReview, EventReview.event_id == Event.id)
+        .join(EventReview, col(EventReview.event_id) == col(Event.id))
         .where(Event.organizer_id == user_id)
     )
 
@@ -120,6 +156,7 @@ def get_user_reviews_average(
         average_rating=round(float(average_rating), 2) if average_rating is not None else 0.0,
         total_reviews_count=total_reviews_count,
     )
+
 
 @router.post("/me/avatar", response_model=UserRead)
 def upload_my_avatar(
