@@ -115,6 +115,74 @@ def search_users(
 def get_users(session: Session = Depends(get_session)):
     return session.exec(select(User)).all()
 
+@router.get("/{user_id}/following", response_model=list[UserPublic])
+def get_user_following(
+    user_id: int,
+    page: int = Query(default=1, ge=1),
+    size: int = Query(default=20, ge=1, le=100),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    user = session.get(User, user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Użytkownik nie istnieje")
+
+    statement = (
+        select(User)
+        .join(Follow, col(Follow.followed_id) == col(User.id))
+        .where(col(Follow.follower_id) == user_id)
+        .offset((page - 1) * size)
+        .limit(size)
+    )
+
+    users = session.exec(statement).all()
+
+    return [
+        {
+            "id": followed_user.id,
+            "first_name": followed_user.first_name,
+            "last_name": followed_user.last_name,
+            "university": followed_user.university,
+            "faculty": followed_user.faculty,
+            "avatar_url": followed_user.avatar_url,
+        }
+        for followed_user in users
+    ]
+@router.get("/{user_id}/followers", response_model=list[UserPublic])
+def get_user_followers(
+    user_id: int,
+    page: int = Query(default=1, ge=1),
+    size: int = Query(default=20, ge=1, le=100),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    user = session.get(User, user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Użytkownik nie istnieje")
+
+    statement = (
+        select(User)
+        .join(Follow, col(Follow.follower_id) == col(User.id))
+        .where(col(Follow.followed_id) == user_id)
+        .offset((page - 1) * size)
+        .limit(size)
+    )
+
+    users = session.exec(statement).all()
+
+    return [
+        {
+            "id": follower_user.id,
+            "first_name": follower_user.first_name,
+            "last_name": follower_user.last_name,
+            "university": follower_user.university,
+            "faculty": follower_user.faculty,
+            "avatar_url": follower_user.avatar_url,
+        }
+        for follower_user in users
+    ]
 
 @router.get("/me/events", response_model=MyEventsResponse)
 def get_my_events(
