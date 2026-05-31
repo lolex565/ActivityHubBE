@@ -50,6 +50,7 @@ class UserPublic(BaseModel):
     avatar_url: Optional[str] = None
     organizer_average_rating: float = 0.0
     organizer_total_reviews: int = 0
+    is_followed: bool = False
 
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
