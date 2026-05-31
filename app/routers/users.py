@@ -143,6 +143,58 @@ def get_my_events(
         "joined": [event_to_read_dict(session, event) for event in joined_events],
     }
 
+@router.post("/{user_id}/follow", status_code=201)
+def follow_user(
+    user_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="Niepoprawny token użytkownika")
+
+    current_user_id = current_user.id
+
+    if current_user_id == user_id:
+        raise HTTPException(status_code=400, detail="Nie możesz obserwować samego siebie")
+
+    followed_user = session.get(User, user_id)
+    if not followed_user:
+        raise HTTPException(status_code=404, detail="Użytkownik nie istnieje")
+
+    existing_follow = session.get(Follow, (current_user_id, user_id))
+    if existing_follow:
+        raise HTTPException(status_code=400, detail="Już obserwujesz tego użytkownika")
+
+    follow = Follow(
+        follower_id=current_user_id,
+        followed_id=user_id,
+    )
+
+    session.add(follow)
+    session.commit()
+
+    return {"message": "Zaobserwowano użytkownika"}
+
+@router.delete("/{user_id}/follow", status_code=204)
+def unfollow_user(
+    user_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="Niepoprawny token użytkownika")
+
+    current_user_id = current_user.id
+
+    follow = session.get(Follow, (current_user_id, user_id))
+
+    if not follow:
+        raise HTTPException(status_code=404, detail="Nie obserwujesz tego użytkownika")
+
+    session.delete(follow)
+    session.commit()
+
+    return None
 
 @router.get("/{user_id}", response_model=UserRead)
 def get_user(user_id: int, session: Session = Depends(get_session)):
