@@ -167,3 +167,19 @@ class Follow(SQLModel, table=True):
     follower_id: int = Field(foreign_key="users.id", primary_key=True)
     followed_id: int = Field(foreign_key="users.id", primary_key=True)
     created_at: datetime = Field(default_factory=utc_now)
+
+class ProfilePost(SQLModel, table=True):
+    __tablename__: ClassVar[str] = "profile_posts"
+
+    id: int | None = Field(default=None, primary_key=True)
+
+    author_id: int = Field(
+        foreign_key="users.id",
+        index=True,
+    )
+
+    content: str = Field(
+        max_length=500,
+    )
+
+    created_at: datetime = Field(default_factory=utc_now)
