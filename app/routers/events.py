@@ -362,6 +362,23 @@ def interest_event(
 
     return {"message": "Oznaczono zainteresowanie wydarzeniem"}
 
+@router.delete("/{event_id}/interest")
+def uninterest_event(
+    event_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    require_event(session, event_id)
+
+    existing = session.get(UserEvent, (current_user.id, event_id))
+
+    if not existing or existing.status != EventUserStatus.INTERESTED:
+        raise HTTPException(status_code=400, detail="Użytkownik nie jest zainteresowany wydarzeniem")
+
+    session.delete(existing)
+    session.commit()
+
+    return {"message": "Usunięto zainteresowanie wydarzeniem"}
 
 @router.get("/{event_id}/participants", response_model=list[ParticipantRead])
 def get_participants(event_id: int, session: Session = Depends(get_session)):
