@@ -7,13 +7,16 @@ from sqlalchemy import func
 from sqlmodel import Session, col, or_, select
 
 from app.database import get_session
-from app.models import Event, EventReview, EventUserStatus, Follow, User, UserEvent
+from app.models import Event, EventReview, EventUserStatus, Follow, User, UserEvent, ProfilePost
 from app.schemas import (
     MyEventsResponse,
     UserAverageReviewRead,
     UserPublic,
     UserRead,
     UserUpdate,
+    ProfilePostCreate, 
+    ProfilePostRead,
+    ProfilePostUpdate
 )
 from app.security import get_current_user
 from app.services import event_to_read_dict
@@ -336,3 +339,90 @@ def upload_my_avatar(
     session.refresh(current_user)
 
     return current_user
+
+@router.post("/me/posts", response_model=ProfilePostRead, status_code=201)
+def create_my_profile_post(
+    payload: ProfilePostCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="Niepoprawny token użytkownika")
+
+    post = ProfilePost(
+        author_id=current_user.id,
+        content=payload.content,
+    )
+
+    session.add(post)
+    session.commit()
+    session.refresh(post)
+
+    return post
+
+@router.get("/{user_id}/posts", response_model=list[ProfilePostRead])
+def get_user_profile_posts(
+    user_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    user = session.get(User, user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Użytkownik nie istnieje")
+
+    statement = (
+        select(ProfilePost)
+        .where(col(ProfilePost.author_id) == user_id)
+        .order_by(col(ProfilePost.created_at).desc())
+    )
+
+    return session.exec(statement).all()
+
+@router.patch("/profile-posts/{post_id}", response_model=ProfilePostRead)
+def update_profile_post(
+    post_id: int,
+    payload: ProfilePostUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="Niepoprawny token użytkownika")
+
+    post = session.get(ProfilePost, post_id)
+
+    if not post:
+        raise HTTPException(status_code=404, detail="Post nie istnieje")
+
+    if post.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Nie możesz edytować cudzego posta")
+
+    post.content = payload.content
+
+    session.add(post)
+    session.commit()
+    session.refresh(post)
+
+    return post
+
+@router.delete("/profile-posts/{post_id}", status_code=204)
+def delete_profile_post(
+    post_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="Niepoprawny token użytkownika")
+
+    post = session.get(ProfilePost, post_id)
+
+    if not post:
+        raise HTTPException(status_code=404, detail="Post nie istnieje")
+
+    if post.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Nie możesz usunąć cudzego posta")
+
+    session.delete(post)
+    session.commit()
+
+    return None

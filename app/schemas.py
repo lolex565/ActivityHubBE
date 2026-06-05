@@ -198,3 +198,15 @@ class UserAverageReviewRead(BaseModel):
     user_id: int
     average_rating: float
     total_reviews_count: int
+    
+class ProfilePostCreate(BaseModel):
+    content: str = Field(min_length=1, max_length=500)
+    
+class ProfilePostUpdate(BaseModel):
+    content: str = Field(min_length=1, max_length=500)
+
+class ProfilePostRead(BaseModel):
+    id: int
+    author_id: int
+    content: str
+    created_at: datetime
