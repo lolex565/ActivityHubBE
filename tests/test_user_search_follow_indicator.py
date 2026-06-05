@@ -42,18 +42,19 @@ def login_user(email: str):
 
 def test_user_search_returns_is_followed_indicator():
     unique = uuid.uuid4().hex
+    marker = unique[:8]
 
     logged_user = register_user(
         f"follow_search_logged_{unique}@student.pwr.edu.pl",
-        "Logged",
+        f"Logged{marker}",
     )
     followed_user = register_user(
         f"follow_search_followed_{unique}@student.pwr.edu.pl",
-        "Followed",
+        f"Followed{marker}",
     )
     not_followed_user = register_user(
         f"follow_search_not_followed_{unique}@student.pwr.edu.pl",
-        "NotFollowed",
+        f"NotFollowed{marker}",
     )
 
     with psycopg2.connect(DATABASE_URL) as connection:
@@ -71,6 +72,7 @@ def test_user_search_returns_is_followed_indicator():
     response = requests.get(
         f"{BASE_URL}/users/search",
         params={
+            "search_query": marker,
             "faculty": "WIT",
             "university": "PWR",
             "size": 100,
@@ -81,6 +83,10 @@ def test_user_search_returns_is_followed_indicator():
     assert response.status_code == 200, response.text
 
     users = response.json()
+    user_ids = {user["id"] for user in users}
+
+    assert followed_user["id"] in user_ids
+    assert not_followed_user["id"] in user_ids
 
     followed_result = next(user for user in users if user["id"] == followed_user["id"])
     not_followed_result = next(user for user in users if user["id"] == not_followed_user["id"])
