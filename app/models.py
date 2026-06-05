@@ -78,7 +78,7 @@ class Event(SQLModel, table=True):
     max_participants: int | None = None
 
     status: EventStatus = Field(
-        default=EventStatus.ACTIVE,
+        default=EventStatus.DRAFT,
         sa_column=Column(SAEnum(EventStatus, name="event_status"), nullable=False, index=True),
     )
     created_at: datetime = Field(default_factory=utc_now)

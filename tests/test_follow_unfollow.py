@@ -7,13 +7,13 @@ BASE_URL = "http://localhost:8000"
 PASSWORD = "zaq1@WSX"
 
 
-def register_user(email: str):
+def register_user(email: str, first_name: str = "Follow"):
     response = requests.post(
         f"{BASE_URL}/auth/register",
         json={
             "email": email,
             "password": PASSWORD,
-            "first_name": "Follow",
+            "first_name": first_name,
             "last_name": "User",
             "birth_date": "2002-08-23",
             "university": "PWR",
@@ -40,9 +40,16 @@ def login_user(email: str):
 
 def test_user_can_follow_and_unfollow_another_user():
     unique = uuid.uuid4().hex
+    marker = unique[:8]
 
-    follower = register_user(f"follow_action_follower_{unique}@student.pwr.edu.pl")
-    followed = register_user(f"follow_action_followed_{unique}@student.pwr.edu.pl")
+    follower = register_user(
+        f"follow_action_follower_{unique}@student.pwr.edu.pl",
+        f"Follower{marker}",
+    )
+    followed = register_user(
+        f"follow_action_followed_{unique}@student.pwr.edu.pl",
+        f"Followed{marker}",
+    )
 
     headers = login_user(follower["email"])
 
@@ -57,7 +64,7 @@ def test_user_can_follow_and_unfollow_another_user():
     search_response = requests.get(
         f"{BASE_URL}/users/search",
         params={
-            "search_query": "Follow",
+            "search_query": marker,
             "faculty": "WIT",
             "size": 100,
         },
@@ -83,7 +90,7 @@ def test_user_can_follow_and_unfollow_another_user():
     search_after_unfollow_response = requests.get(
         f"{BASE_URL}/users/search",
         params={
-            "search_query": "Follow",
+            "search_query": marker,
             "faculty": "WIT",
             "size": 100,
         },
