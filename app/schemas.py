@@ -70,7 +70,7 @@ class EventCreate(BaseModel):
     event_date: date
     event_time: time
     max_participants: Optional[int] = Field(default=None, gt=0)
-    status: EventStatus = EventStatus.ACTIVE
+    status: EventStatus = EventStatus.DRAFT
 
 
 class EventUpdate(BaseModel):

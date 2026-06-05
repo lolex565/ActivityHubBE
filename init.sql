@@ -51,7 +51,7 @@ CREATE TABLE events (
     event_date DATE NOT NULL,
     event_time TIME NOT NULL,
     max_participants INT CHECK (max_participants > 0),
-    status event_status NOT NULL DEFAULT 'ACTIVE',
+    status event_status NOT NULL DEFAULT 'DRAFT',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
