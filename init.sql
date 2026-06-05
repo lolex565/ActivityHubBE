@@ -105,6 +105,23 @@ CREATE TABLE notifications (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE profile_posts (
+    id BIGSERIAL PRIMARY KEY,
+
+    author_id INT NOT NULL
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    content VARCHAR(500) NOT NULL,
+
+    created_at TIMESTAMP NOT NULL
+        DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_profile_posts_author_id
+ON profile_posts(author_id);
+
+
 CREATE INDEX idx_user_events_event_id ON user_events(event_id);
 CREATE INDEX idx_events_date_time ON events(event_date, event_time);
 CREATE INDEX idx_events_status ON events(status);
