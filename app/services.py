@@ -15,10 +15,12 @@ def check_event_participation(session: Session, event_id: int, curr_user: Option
     if curr_user:
         statement = select(UserEvent).where(
             UserEvent.event_id == event_id,
-            UserEvent.user_id == curr_user.id
+            UserEvent.user_id == curr_user.id,
+            UserEvent.status == EventUserStatus.PARTICIPANT,
         )
         return bool(len(session.exec(statement).all()))
     return False
+
 
 
 def event_to_read_dict(session: Session, event: Event, curr_user: Optional[User] = None) -> dict:

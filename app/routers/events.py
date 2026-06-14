@@ -131,13 +131,17 @@ def get_events_map(session: Session = Depends(get_session)):
 
 
 @router.get("/{event_id}", response_model=EventDetails)
-def get_event(event_id: int, session: Session = Depends(get_session)):
+def get_event(
+    event_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     event = require_event(session, event_id)
     organizer = session.get(User, event.organizer_id)
 
-    data = event_to_read_dict(session, event)
+    data = event_to_read_dict(session, event, current_user)
 
-    if organizer:
+    if organizer and organizer.id is not None:
         rating_stats = get_organizer_rating_stats(session, organizer.id)
 
         data["organizer"] = {

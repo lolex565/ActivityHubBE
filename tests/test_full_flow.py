@@ -163,7 +163,10 @@ def test_full_backend_flow():
     assert search_response.status_code == 200
     assert any(item["id"] == event_id for item in search_response.json())
 
-    details_response = requests.get(f"{BASE_URL}/events/{event_id}")
+    details_response = requests.get(
+        f"{BASE_URL}/events/{event_id}",
+        headers=organizer_headers,
+    )
 
     assert details_response.status_code == 200
     assert details_response.json()["id"] == event_id
@@ -299,7 +302,10 @@ def test_full_backend_flow():
     assert average_data["average_rating"] == 5.0
     assert average_data["total_reviews_count"] == 1
 
-    details_after_review_response = requests.get(f"{BASE_URL}/events/{event_id}")
+    details_after_review_response = requests.get(
+        f"{BASE_URL}/events/{event_id}",
+        headers=participant_headers,
+    )
 
     assert details_after_review_response.status_code == 200
 
@@ -307,7 +313,7 @@ def test_full_backend_flow():
 
     assert organizer_data["organizer_average_rating"] == 5.0
     assert organizer_data["organizer_total_reviews"] == 1
-    
+
     leave_response = requests.delete(
         f"{BASE_URL}/events/{event_id}/leave",
         headers=participant_headers,
