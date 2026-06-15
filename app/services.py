@@ -1,7 +1,7 @@
 from sqlmodel import Session, select
 from typing import Optional
 
-from app.models import Event, EventUserStatus, UserEvent, User
+from app.models import Event, EventReview, EventUserStatus, UserEvent, User
 
 
 def count_event_participants(session: Session, event_id: int) -> int:
@@ -21,6 +21,20 @@ def check_event_participation(session: Session, event_id: int, curr_user: Option
         return bool(len(session.exec(statement).all()))
     return False
 
+def check_event_reviewed(
+    session: Session,
+    event_id: int,
+    curr_user: Optional[User],
+) -> bool:
+    if not curr_user:
+        return False
+
+    statement = select(EventReview).where(
+        EventReview.event_id == event_id,
+        EventReview.author_id == curr_user.id,
+    )
+
+    return bool(session.exec(statement).first())
 
 
 def event_to_read_dict(session: Session, event: Event, curr_user: Optional[User] = None) -> dict:
@@ -42,4 +56,5 @@ def event_to_read_dict(session: Session, event: Event, curr_user: Optional[User]
         "created_at": event.created_at,
         "participants_count": count_event_participants(session, event.id),
         "joined": check_event_participation(session, event.id, curr_user),
+        "has_reviewed": check_event_reviewed(session, event.id, curr_user),
     }

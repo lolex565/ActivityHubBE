@@ -102,6 +102,7 @@ class EventRead(BaseModel):
     created_at: datetime
     participants_count: int = 0
     joined: bool
+    has_reviewed: bool = False
 
 
 class EventDetails(EventRead):
