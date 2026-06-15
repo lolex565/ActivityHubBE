@@ -421,7 +421,7 @@ def create_event_review(
 ):
     event = require_event(session, event_id)
 
-    if event.event_date >= date.today():
+    if event.status != EventStatus.FINISHED:
         raise HTTPException(
             status_code=400,
             detail="Nie można ocenić wydarzenia, które jeszcze się nie odbyło"
